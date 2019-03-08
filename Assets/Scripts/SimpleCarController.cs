@@ -1,10 +1,30 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class SimpleCarController : MonoBehaviour {
 
-	public void GetInput()
+    private WheelCollider frontDriverW, frontPassengerW, rearDriverW, rearPassengerW;
+    private Transform frontDriverT, frontPassengerT, rearDriverT, rearPassengerT;
+
+    void Start()
+    {
+        var wheelColliders = gameObject.GetComponentsInChildren<WheelCollider>();
+        var wheels = gameObject.transform.Find("Wheels");
+
+        frontDriverT = wheels.Find("FrontDriver");
+        frontPassengerT = wheels.Find("FrontPassenger");
+        rearDriverT = wheels.Find("RearDriver");
+        rearPassengerT = wheels.Find("RearPassenger");
+
+        frontDriverW = wheelColliders.First(q => q.name == "FrontDriver");
+        frontPassengerW = wheelColliders.First(q => q.name == "FrontPassenger");
+        rearDriverW = wheelColliders.First(q => q.name == "RearDriver");
+        rearPassengerW = wheelColliders.First(q => q.name == "RearPassenger");
+    }
+
+    public void GetInput()
 	{
 		m_horizontalInput = Input.GetAxis("Horizontal");
 		m_verticalInput = Input.GetAxis("Vertical");
@@ -48,16 +68,29 @@ public class SimpleCarController : MonoBehaviour {
 		Steer();
 		Accelerate();
 		UpdateWheelPoses();
-	}
+        BrakeOnGrass();
+    }
 
 	private float m_horizontalInput;
 	private float m_verticalInput;
 	private float m_steeringAngle;
 
-	public WheelCollider frontDriverW, frontPassengerW;
-	public WheelCollider rearDriverW, rearPassengerW;
-	public Transform frontDriverT, frontPassengerT;
-	public Transform rearDriverT, rearPassengerT;
 	public float maxSteerAngle = 30;
-	public float motorForce = 50;
+	public float motorForce = 200;
+    public float BrakeForce = 200;
+
+    void BrakeOnGrass()
+    {
+        ApplyBrakeOnGrass(frontDriverW);
+        ApplyBrakeOnGrass(frontPassengerW);
+    }
+
+    private void ApplyBrakeOnGrass(WheelCollider wheel)
+    {
+        WheelHit hit;
+        if (wheel.GetGroundHit(out hit))
+        {
+            wheel.brakeTorque = hit.collider.material.name == "Grass Surface (Instance)" ? BrakeForce : 0;
+        }
+    }
 }

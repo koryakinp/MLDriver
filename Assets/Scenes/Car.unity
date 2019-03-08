@@ -3245,7 +3245,6 @@ GameObject:
   - component: {fileID: 1703296078}
   - component: {fileID: 1703296077}
   - component: {fileID: 1703296079}
-  - component: {fileID: 1703296080}
   m_Layer: 0
   m_Name: Car
   m_TagString: Untagged
@@ -3328,29 +3327,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1427aafbfd864234f8ea0661c23dab64, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  frontDriverW: {fileID: 1980225278}
-  frontPassengerW: {fileID: 1015379779}
-  rearDriverW: {fileID: 1407755779}
-  rearPassengerW: {fileID: 987008789}
-  frontDriverT: {fileID: 926194729}
-  frontPassengerT: {fileID: 996608181}
-  rearDriverT: {fileID: 2084172967}
-  rearPassengerT: {fileID: 461042348}
   maxSteerAngle: 30
-  motorForce: 150
---- !u!114 &1703296080
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1703296075}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5da04f4ac8570dc4d85e138b88db18a6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  BrakeOnGrass: 70
+  motorForce: 200
+  BrakeForce: 200
 --- !u!1 &1704497364
 GameObject:
   m_ObjectHideFlags: 0
