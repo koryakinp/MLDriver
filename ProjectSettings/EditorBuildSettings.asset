@@ -8,4 +8,7 @@ EditorBuildSettings:
   - enabled: 0
     path: 
     guid: 00000000000000000000000000000000
+  - enabled: 1
+    path: Assets/Scenes/Car.unity
+    guid: a949080f1dc4f254f95c5543982b41ce
   m_configObjects: {}

@@ -3,6 +3,7 @@ using UnityEngine;
 using MLAgents;
 using PathCreation;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class DriverAgent : Agent
 {
@@ -11,9 +12,11 @@ public class DriverAgent : Agent
     private Rigidbody car;
     private Text uitext1;
     private Text uitext2;
+    private List<(Vector2, Vector2)> lineSegments;
 
     void Start()
     {
+        lineSegments = GetLineSegments();
         car = gameObject.GetComponent<Rigidbody>();
         var wheelColliders = gameObject.GetComponentsInChildren<WheelCollider>();
         var wheels = gameObject.transform.Find("Wheels");
@@ -98,13 +101,13 @@ public class DriverAgent : Agent
 
     public override void AgentAction(float[] vectorAction, string textAction)
     {
-        var carPosition = new Vector3(car.position.x, 0, car.position.z);
+        var carPosition = new Vector2(car.position.x, car.position.z);
 
-        var distance = pathCreator.path.vertices.Min(q => Vector3.Distance(q, carPosition));
+        var distance = lineSegments.Min(q => DistancePointLine(carPosition, q.Item1, q.Item2));
         var velocity = Vector3.Dot(car.velocity, gameObject.transform.forward);
 
-        uitext1.text = $"Velocity: {velocity.ToString("#.##")}";
-        uitext2.text = $"Distance: {distance.ToString("#.##")}";
+        uitext1.text = $"Speed: {velocity.ToString("#.##")}";
+        uitext2.text = $"Offset: {distance.ToString("#.##")}";
 
         m_horizontalInput = vectorAction[1];
         m_verticalInput = vectorAction[0];
@@ -112,5 +115,39 @@ public class DriverAgent : Agent
         base.AgentAction(vectorAction, textAction);
     }
 
-    
+    public static float DistancePointLine(Vector3 point, Vector3 lineStart, Vector3 lineEnd)
+    {
+        return Vector3.Magnitude(ProjectPointLine(point, lineStart, lineEnd) - point);
+    }
+
+    private static Vector3 ProjectPointLine(Vector3 point, Vector3 lineStart, Vector3 lineEnd)
+    {
+        Vector3 relativePoint = point - lineStart;
+        Vector3 lineDirection = lineEnd - lineStart;
+        float length = lineDirection.magnitude;
+        Vector3 normalizedLineDirection = lineDirection;
+        if (length > .000001f)
+            normalizedLineDirection /= length;
+
+        float dot = Vector3.Dot(normalizedLineDirection, relativePoint);
+        dot = Mathf.Clamp(dot, 0.0F, length);
+
+        return lineStart + normalizedLineDirection * dot;
+    }
+
+    private List<(Vector2, Vector2)> GetLineSegments()
+    {
+        var lines = new List<(Vector2, Vector2)>();
+
+        for (int i = 0; i < pathCreator.path.NumVertices; i++)
+        {
+            var start = pathCreator.path.vertices[i];
+            var end = i == pathCreator.path.NumVertices - 1 
+                ? pathCreator.path.vertices[0] 
+                : pathCreator.path.vertices[i + 1];
+            lines.Add((new Vector2(start.x, start.z), new Vector2(end.x, end.z)));
+        }
+
+        return lines;
+    }
 }
