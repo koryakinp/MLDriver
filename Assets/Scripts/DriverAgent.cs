@@ -1,18 +1,25 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using UnityEngine;
 using MLAgents;
+using PathCreation;
+using UnityEngine.UI;
 
 public class DriverAgent : Agent
 {
     private WheelCollider frontDriverW, frontPassengerW, rearDriverW, rearPassengerW;
     private Transform frontDriverT, frontPassengerT, rearDriverT, rearPassengerT;
+    private Rigidbody car;
+    private Text uitext1;
+    private Text uitext2;
 
     void Start()
     {
+        car = gameObject.GetComponent<Rigidbody>();
         var wheelColliders = gameObject.GetComponentsInChildren<WheelCollider>();
         var wheels = gameObject.transform.Find("Wheels");
+
+        uitext1 = FindObjectsOfType<Text>().First(q => q.name == "Velocity");
+        uitext2 = FindObjectsOfType<Text>().First(q => q.name == "Distance");
 
         frontDriverT = wheels.Find("FrontDriver");
         frontPassengerT = wheels.Find("FrontPassenger");
@@ -72,6 +79,7 @@ public class DriverAgent : Agent
 	public float maxSteerAngle = 30;
 	public float motorForce = 200;
     public float BrakeForce = 200;
+    public PathCreator pathCreator;
 
     void BrakeOnGrass()
     {
@@ -90,9 +98,19 @@ public class DriverAgent : Agent
 
     public override void AgentAction(float[] vectorAction, string textAction)
     {
+        var carPosition = new Vector3(car.position.x, 0, car.position.z);
+
+        var distance = pathCreator.path.vertices.Min(q => Vector3.Distance(q, carPosition));
+        var velocity = Vector3.Dot(car.velocity, gameObject.transform.forward);
+
+        uitext1.text = $"Velocity: {velocity.ToString("#.##")}";
+        uitext2.text = $"Distance: {distance.ToString("#.##")}";
+
         m_horizontalInput = vectorAction[1];
         m_verticalInput = vectorAction[0];
 
         base.AgentAction(vectorAction, textAction);
     }
+
+    
 }
