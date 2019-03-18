@@ -10,19 +10,16 @@ public class DriverAgent : Agent
     private WheelCollider frontDriverW, frontPassengerW, rearDriverW, rearPassengerW;
     private Transform frontDriverT, frontPassengerT, rearDriverT, rearPassengerT;
     private Rigidbody car;
-    private Text uitext1;
-    private Text uitext2;
     private List<(Vector2, Vector2)> lineSegments;
+    private BoxCollider collider;
 
     void Start()
     {
+        collider = GetComponent<BoxCollider>();
         lineSegments = GetLineSegments();
         car = gameObject.GetComponent<Rigidbody>();
         var wheelColliders = gameObject.GetComponentsInChildren<WheelCollider>();
         var wheels = gameObject.transform.Find("Wheels");
-
-        uitext1 = FindObjectsOfType<Text>().First(q => q.name == "Velocity");
-        uitext2 = FindObjectsOfType<Text>().First(q => q.name == "Distance");
 
         frontDriverT = wheels.Find("FrontDriver");
         frontPassengerT = wheels.Find("FrontPassenger");
@@ -33,8 +30,6 @@ public class DriverAgent : Agent
         frontPassengerW = wheelColliders.First(q => q.name == "FrontPassenger");
         rearDriverW = wheelColliders.First(q => q.name == "RearDriver");
         rearPassengerW = wheelColliders.First(q => q.name == "RearPassenger");
-
-        Reseet();
     }
 
 	private void FixedUpdate()
@@ -42,7 +37,6 @@ public class DriverAgent : Agent
 		Steer();
 		Accelerate();
 		UpdateWheelPoses();
-        BrakeOnGrass();
     }
 
 	private float m_horizontalInput;
@@ -64,30 +58,48 @@ public class DriverAgent : Agent
         m_horizontalInput = vectorAction[1];
         m_verticalInput = vectorAction[0];
 
+        if (IsOnGrass())
+        {
+            Done();
+            AddReward(-10);
+        }
+        else
+        {
+            AddReward(velocity / (1 + distance));
+        }
+
         base.AgentAction(vectorAction, textAction);
     }
 
-    private void Reseet()
+    public override void AgentReset()
     {
-        var idx = Random.Range(0, pathCreator.path.vertices.Length - 1);
-        var start = pathCreator.path.vertices[idx];
-        var end = pathCreator.path.tangents[idx];
+        car.velocity = Vector3.zero;
+        var idx = Random.Range(0, pathCreator.EditorData.bezierPath.NumAnchorPoints - 1);
+        var pointsInSegment = pathCreator.EditorData.bezierPath.GetPointsInSegment(idx);
 
-        //var pointTo = pathCreator.path.tangents[idx];
-        car.position = start;
-
-        //Vector3 relativePos = car.position - pathCreator.path.tangents[0];
-        //Quaternion rotation = Quaternion.LookRotation(relativePos, Vector3.up);
-
-        //car.rotation = rotation;
+        transform.position = new Vector3(pointsInSegment[0].x, 0.01f, pointsInSegment[0].z);
+        transform.LookAt(pointsInSegment[1]);
     }
 
-    private void OnCollisionEnter(Collision collision)
+    private bool IsOnGrass()
     {
-        if(collision.collider.name == "RoadBoundary")
+        var boundPoint1 = collider.bounds.min;
+        var boundPoint2 = collider.bounds.max;
+        var boundPoint4 = new Vector3(boundPoint1.x, boundPoint2.y, boundPoint1.z);
+        var boundPoint6 = new Vector3(boundPoint1.x, boundPoint2.y, boundPoint2.z);
+        var boundPoint8 = new Vector3(boundPoint2.x, boundPoint2.y, boundPoint1.z);
+
+        var rays = new List<Ray>()
         {
-            print(collision.collider.name);
-        }
+            new Ray(boundPoint6, Vector3.down),
+            new Ray(boundPoint2, Vector3.down),
+            new Ray(boundPoint8, Vector3.down),
+            new Ray(boundPoint4, Vector3.down)
+        };
+
+        return rays
+            .Any(q => Physics.Raycast(q, out RaycastHit castInfo, 9) && castInfo.collider.name == "Grass");
+
     }
 
     private static float DistancePointLine(Vector3 point, Vector3 lineStart, Vector3 lineEnd)
@@ -125,21 +137,6 @@ public class DriverAgent : Agent
 
         _transform.position = _pos;
         _transform.rotation = _quat;
-    }
-
-    private void BrakeOnGrass()
-    {
-        ApplyBrakeOnGrass(frontDriverW);
-        ApplyBrakeOnGrass(frontPassengerW);
-    }
-
-    private void ApplyBrakeOnGrass(WheelCollider wheel)
-    {
-        WheelHit hit;
-        if (wheel.GetGroundHit(out hit))
-        {
-            wheel.brakeTorque = hit.collider.material.name == "Grass Surface (Instance)" ? BrakeForce : 0;
-        }
     }
 
     private static Vector3 ProjectPointLine(Vector3 point, Vector3 lineStart, Vector3 lineEnd)
