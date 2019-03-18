@@ -33,39 +33,9 @@ public class DriverAgent : Agent
         frontPassengerW = wheelColliders.First(q => q.name == "FrontPassenger");
         rearDriverW = wheelColliders.First(q => q.name == "RearDriver");
         rearPassengerW = wheelColliders.First(q => q.name == "RearPassenger");
+
+        Reseet();
     }
-
-	private void Steer()
-	{
-		m_steeringAngle = maxSteerAngle * m_horizontalInput;
-		frontDriverW.steerAngle = m_steeringAngle;
-		frontPassengerW.steerAngle = m_steeringAngle;
-	}
-
-	private void Accelerate()
-	{
-		frontDriverW.motorTorque = m_verticalInput * motorForce;
-		frontPassengerW.motorTorque = m_verticalInput * motorForce;
-	}
-
-	private void UpdateWheelPoses()
-	{
-		UpdateWheelPose(frontDriverW, frontDriverT);
-		UpdateWheelPose(frontPassengerW, frontPassengerT);
-		UpdateWheelPose(rearDriverW, rearDriverT);
-		UpdateWheelPose(rearPassengerW, rearPassengerT);
-	}
-
-	private void UpdateWheelPose(WheelCollider _collider, Transform _transform)
-	{
-		Vector3 _pos = _transform.position;
-		Quaternion _quat = _transform.rotation;
-
-		_collider.GetWorldPose(out _pos, out _quat);
-
-		_transform.position = _pos;
-		_transform.rotation = _quat;
-	}
 
 	private void FixedUpdate()
 	{
@@ -84,7 +54,80 @@ public class DriverAgent : Agent
     public float BrakeForce = 200;
     public PathCreator pathCreator;
 
-    void BrakeOnGrass()
+    public override void AgentAction(float[] vectorAction, string textAction)
+    {
+        var carPosition = new Vector2(car.position.x, car.position.z);
+
+        var distance = lineSegments.Min(q => DistancePointLine(carPosition, q.Item1, q.Item2));
+        var velocity = Vector3.Dot(car.velocity, gameObject.transform.forward);
+
+        m_horizontalInput = vectorAction[1];
+        m_verticalInput = vectorAction[0];
+
+        base.AgentAction(vectorAction, textAction);
+    }
+
+    private void Reseet()
+    {
+        var idx = Random.Range(0, pathCreator.path.vertices.Length - 1);
+        var start = pathCreator.path.vertices[idx];
+        var end = pathCreator.path.tangents[idx];
+
+        //var pointTo = pathCreator.path.tangents[idx];
+        car.position = start;
+
+        //Vector3 relativePos = car.position - pathCreator.path.tangents[0];
+        //Quaternion rotation = Quaternion.LookRotation(relativePos, Vector3.up);
+
+        //car.rotation = rotation;
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if(collision.collider.name == "RoadBoundary")
+        {
+            print(collision.collider.name);
+        }
+    }
+
+    private static float DistancePointLine(Vector3 point, Vector3 lineStart, Vector3 lineEnd)
+    {
+        return Vector3.Magnitude(ProjectPointLine(point, lineStart, lineEnd) - point);
+    }
+
+    private void Steer()
+    {
+        m_steeringAngle = maxSteerAngle * m_horizontalInput;
+        frontDriverW.steerAngle = m_steeringAngle;
+        frontPassengerW.steerAngle = m_steeringAngle;
+    }
+
+    private void Accelerate()
+    {
+        frontDriverW.motorTorque = m_verticalInput * motorForce;
+        frontPassengerW.motorTorque = m_verticalInput * motorForce;
+    }
+
+    private void UpdateWheelPoses()
+    {
+        UpdateWheelPose(frontDriverW, frontDriverT);
+        UpdateWheelPose(frontPassengerW, frontPassengerT);
+        UpdateWheelPose(rearDriverW, rearDriverT);
+        UpdateWheelPose(rearPassengerW, rearPassengerT);
+    }
+
+    private void UpdateWheelPose(WheelCollider _collider, Transform _transform)
+    {
+        Vector3 _pos = _transform.position;
+        Quaternion _quat = _transform.rotation;
+
+        _collider.GetWorldPose(out _pos, out _quat);
+
+        _transform.position = _pos;
+        _transform.rotation = _quat;
+    }
+
+    private void BrakeOnGrass()
     {
         ApplyBrakeOnGrass(frontDriverW);
         ApplyBrakeOnGrass(frontPassengerW);
@@ -97,27 +140,6 @@ public class DriverAgent : Agent
         {
             wheel.brakeTorque = hit.collider.material.name == "Grass Surface (Instance)" ? BrakeForce : 0;
         }
-    }
-
-    public override void AgentAction(float[] vectorAction, string textAction)
-    {
-        var carPosition = new Vector2(car.position.x, car.position.z);
-
-        var distance = lineSegments.Min(q => DistancePointLine(carPosition, q.Item1, q.Item2));
-        var velocity = Vector3.Dot(car.velocity, gameObject.transform.forward);
-
-        uitext1.text = $"Speed: {velocity.ToString("#.##")}";
-        uitext2.text = $"Offset: {distance.ToString("#.##")}";
-
-        m_horizontalInput = vectorAction[1];
-        m_verticalInput = vectorAction[0];
-
-        base.AgentAction(vectorAction, textAction);
-    }
-
-    public static float DistancePointLine(Vector3 point, Vector3 lineStart, Vector3 lineEnd)
-    {
-        return Vector3.Magnitude(ProjectPointLine(point, lineStart, lineEnd) - point);
     }
 
     private static Vector3 ProjectPointLine(Vector3 point, Vector3 lineStart, Vector3 lineEnd)
