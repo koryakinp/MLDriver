@@ -11,11 +11,11 @@ public class DriverAgent : Agent
     private Transform frontDriverT, frontPassengerT, rearDriverT, rearPassengerT;
     private Rigidbody car;
     private List<(Vector2, Vector2)> lineSegments;
-    private BoxCollider collider;
+    private int layer_mask;
 
     void Start()
     {
-        collider = GetComponent<BoxCollider>();
+        layer_mask = LayerMask.GetMask("Surface");
         lineSegments = GetLineSegments();
         car = gameObject.GetComponent<Rigidbody>();
         var wheelColliders = gameObject.GetComponentsInChildren<WheelCollider>();
@@ -68,6 +68,8 @@ public class DriverAgent : Agent
             AddReward(velocity / (1 + distance));
         }
 
+        print(GetReward());
+
         base.AgentAction(vectorAction, textAction);
     }
 
@@ -79,27 +81,28 @@ public class DriverAgent : Agent
 
         transform.position = new Vector3(pointsInSegment[0].x, 0.01f, pointsInSegment[0].z);
         transform.LookAt(pointsInSegment[1]);
+
+        frontDriverW.brakeTorque = 0;
+        frontPassengerW.brakeTorque = 0;
+        rearDriverW.brakeTorque = 0;
+        rearPassengerW.brakeTorque = 0;
     }
 
     private bool IsOnGrass()
     {
-        var boundPoint1 = collider.bounds.min;
-        var boundPoint2 = collider.bounds.max;
-        var boundPoint4 = new Vector3(boundPoint1.x, boundPoint2.y, boundPoint1.z);
-        var boundPoint6 = new Vector3(boundPoint1.x, boundPoint2.y, boundPoint2.z);
-        var boundPoint8 = new Vector3(boundPoint2.x, boundPoint2.y, boundPoint1.z);
-
-        var rays = new List<Ray>()
+        var rayStart = transform.position + new Vector3(0, 1, 0);
+        var ray = new Ray(rayStart, Vector3.down);
+        Physics.Raycast(ray, out RaycastHit castInfo2, 2, layer_mask);
+        if(castInfo2.collider.name == "Grass")
         {
-            new Ray(boundPoint6, Vector3.down),
-            new Ray(boundPoint2, Vector3.down),
-            new Ray(boundPoint8, Vector3.down),
-            new Ray(boundPoint4, Vector3.down)
-        };
+            frontDriverW.brakeTorque = float.MaxValue;
+            frontPassengerW.brakeTorque = float.MaxValue;
+            rearDriverW.brakeTorque = float.MaxValue;
+            rearPassengerW.brakeTorque = float.MaxValue;
+            return true;
+        }
 
-        return rays
-            .Any(q => Physics.Raycast(q, out RaycastHit castInfo, 9) && castInfo.collider.name == "Grass");
-
+        return false;
     }
 
     private static float DistancePointLine(Vector3 point, Vector3 lineStart, Vector3 lineEnd)
