@@ -75,8 +75,6 @@ public class DriverAgent : Agent
         {
             AddReward(-0.1f);
         }
-
-        base.AgentAction(vectorAction, textAction);
     }
 
     public override void AgentReset()

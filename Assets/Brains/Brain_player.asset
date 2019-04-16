@@ -16,7 +16,10 @@ MonoBehaviour:
     vectorObservationSize: 0
     numStackedVectorObservations: 1
     vectorActionSize: 030000000200000002000000
-    cameraResolutions: []
+    cameraResolutions:
+    - width: 256
+      height: 256
+      blackAndWhite: 1
     vectorActionDescriptions:
     - Turn
     - Accelerate
