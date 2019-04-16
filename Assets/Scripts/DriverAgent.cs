@@ -2,7 +2,6 @@
 using UnityEngine;
 using MLAgents;
 using PathCreation;
-using UnityEngine.UI;
 using System.Collections.Generic;
 
 public class DriverAgent : Agent
@@ -12,6 +11,10 @@ public class DriverAgent : Agent
     private Rigidbody car;
     private List<(Vector2, Vector2)> lineSegments;
     private int layer_mask;
+
+    private float _turn;
+    private bool _accelerate;
+    private bool _break;
 
     void Start()
     {
@@ -36,15 +39,14 @@ public class DriverAgent : Agent
 	{
 		Steer();
 		Accelerate();
-		UpdateWheelPoses();
+        Break();
+        UpdateWheelPoses();
     }
 
-	private float m_horizontalInput;
-	private float m_verticalInput;
 	private float m_steeringAngle;
 
 	public float maxSteerAngle = 30;
-	public float motorForce = 200;
+	public float MotorForce = 200;
     public float BrakeForce = 200;
     public PathCreator pathCreator;
 
@@ -55,8 +57,9 @@ public class DriverAgent : Agent
         var distance = lineSegments.Min(q => DistancePointLine(carPosition, q.Item1, q.Item2));
         var velocity = Vector3.Dot(car.velocity, gameObject.transform.forward);
 
-        m_horizontalInput = vectorAction[1];
-        m_verticalInput = vectorAction[0];
+        _turn = vectorAction[0];
+        _accelerate = vectorAction[1] == 1;
+        _break = vectorAction[2] == 1;
 
         if (IsOnGrass())
         {
@@ -68,7 +71,10 @@ public class DriverAgent : Agent
             AddReward(velocity / (1 + distance));
         }
 
-        print(GetReward());
+        if(velocity < 0.1)
+        {
+            AddReward(-0.1f);
+        }
 
         base.AgentAction(vectorAction, textAction);
     }
@@ -99,6 +105,7 @@ public class DriverAgent : Agent
             frontPassengerW.brakeTorque = float.MaxValue;
             rearDriverW.brakeTorque = float.MaxValue;
             rearPassengerW.brakeTorque = float.MaxValue;
+            m_steeringAngle = 0;
             return true;
         }
 
@@ -112,15 +119,67 @@ public class DriverAgent : Agent
 
     private void Steer()
     {
-        m_steeringAngle = maxSteerAngle * m_horizontalInput;
+        if(_turn == 1)
+        {
+            m_steeringAngle+=2;
+        }
+        else if(_turn == -1)
+        {
+            m_steeringAngle-=2;
+        }
+        else
+        {
+            if(m_steeringAngle > 0)
+            {
+                m_steeringAngle-=2;
+            }
+            
+            if(m_steeringAngle < 0)
+            {
+                m_steeringAngle+=2;
+            }
+        }
+
+        if(m_steeringAngle > maxSteerAngle)
+        {
+            m_steeringAngle = maxSteerAngle;
+        }
+
+        if (m_steeringAngle < -maxSteerAngle)
+        {
+            m_steeringAngle = -maxSteerAngle;
+        }
+
         frontDriverW.steerAngle = m_steeringAngle;
         frontPassengerW.steerAngle = m_steeringAngle;
     }
 
     private void Accelerate()
     {
-        frontDriverW.motorTorque = m_verticalInput * motorForce;
-        frontPassengerW.motorTorque = m_verticalInput * motorForce;
+        if(_accelerate)
+        {
+            frontDriverW.motorTorque = MotorForce;
+            frontPassengerW.motorTorque = MotorForce;
+        }
+        else
+        {
+            frontDriverW.motorTorque = 0;
+            frontPassengerW.motorTorque = 0;
+        }
+    }
+
+    private void Break()
+    {
+        if (_break)
+        {
+            frontDriverW.brakeTorque = BrakeForce;
+            frontPassengerW.brakeTorque = BrakeForce;
+        }
+        else
+        {
+            frontDriverW.brakeTorque = 0;
+            frontPassengerW.brakeTorque = 0;
+        }
     }
 
     private void UpdateWheelPoses()

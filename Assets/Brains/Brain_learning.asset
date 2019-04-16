@@ -14,15 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   brainParameters:
     vectorObservationSize: 0
-    numStackedVectorObservations: 5
-    vectorActionSize: 02000000
+    numStackedVectorObservations: 1
+    vectorActionSize: 030000000200000002000000
     cameraResolutions:
-    - width: 84
-      height: 84
-      blackAndWhite: 0
+    - width: 256
+      height: 256
+      blackAndWhite: 1
     vectorActionDescriptions:
-    - Accelerate
     - Turn
-    vectorActionSpaceType: 1
+    - Accelerate
+    - Break
+    vectorActionSpaceType: 0
   model: {fileID: 0}
   inferenceDevice: 0
