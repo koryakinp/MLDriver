@@ -13,8 +13,6 @@ public class DriverAgent : Agent
     private int layer_mask;
 
     private float _turn;
-    private bool _accelerate;
-    private bool _break;
 
     void Start()
     {
@@ -37,17 +35,15 @@ public class DriverAgent : Agent
 
 	private void FixedUpdate()
 	{
+        Accelerate();
 		Steer();
-		Accelerate();
-        Break();
         UpdateWheelPoses();
     }
 
 	private float m_steeringAngle;
 
 	public float maxSteerAngle = 30;
-	public float MotorForce = 200;
-    public float BrakeForce = 200;
+	public float MotorForce = 100;
     public PathCreator pathCreator;
 
     public override void AgentAction(float[] vectorAction, string textAction)
@@ -58,8 +54,6 @@ public class DriverAgent : Agent
         var velocity = Vector3.Dot(car.velocity, gameObject.transform.forward);
 
         _turn = vectorAction[0];
-        _accelerate = vectorAction[1] == 1;
-        _break = vectorAction[2] == 1;
 
         if (IsOnGrass())
         {
@@ -68,12 +62,8 @@ public class DriverAgent : Agent
         }
         else
         {
-            AddReward(velocity / (1 + distance));
-        }
-
-        if(velocity < 0.1)
-        {
-            AddReward(-0.1f);
+            var reward = velocity / (1 + distance);
+            AddReward(reward);
         }
     }
 
@@ -121,7 +111,7 @@ public class DriverAgent : Agent
         {
             m_steeringAngle+=2;
         }
-        else if(_turn == -1)
+        else if(_turn == 2)
         {
             m_steeringAngle-=2;
         }
@@ -154,30 +144,8 @@ public class DriverAgent : Agent
 
     private void Accelerate()
     {
-        if(_accelerate)
-        {
-            frontDriverW.motorTorque = MotorForce;
-            frontPassengerW.motorTorque = MotorForce;
-        }
-        else
-        {
-            frontDriverW.motorTorque = 0;
-            frontPassengerW.motorTorque = 0;
-        }
-    }
-
-    private void Break()
-    {
-        if (_break)
-        {
-            frontDriverW.brakeTorque = BrakeForce;
-            frontPassengerW.brakeTorque = BrakeForce;
-        }
-        else
-        {
-            frontDriverW.brakeTorque = 0;
-            frontPassengerW.brakeTorque = 0;
-        }
+        frontDriverW.motorTorque = MotorForce;
+        frontPassengerW.motorTorque = MotorForce;
     }
 
     private void UpdateWheelPoses()

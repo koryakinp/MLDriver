@@ -15,15 +15,13 @@ MonoBehaviour:
   brainParameters:
     vectorObservationSize: 0
     numStackedVectorObservations: 1
-    vectorActionSize: 030000000200000002000000
+    vectorActionSize: 03000000
     cameraResolutions:
-    - width: 256
-      height: 256
+    - width: 128
+      height: 128
       blackAndWhite: 1
     vectorActionDescriptions:
     - Turn
-    - Accelerate
-    - Break
     vectorActionSpaceType: 0
   model: {fileID: 0}
   inferenceDevice: 0
