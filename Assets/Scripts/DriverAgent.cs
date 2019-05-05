@@ -10,12 +10,17 @@ public class DriverAgent : Agent
     private Transform frontDriverT, frontPassengerT, rearDriverT, rearPassengerT;
     private Rigidbody car;
     private List<(Vector2, Vector2)> lineSegments;
+    private Camera _camera;
     private int layer_mask;
 
     private float _turn;
 
     void Start()
     {
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = 30;
+
+        _camera = Camera.main;
         layer_mask = LayerMask.GetMask("Surface");
         lineSegments = GetLineSegments();
         car = gameObject.GetComponent<Rigidbody>();
@@ -33,15 +38,25 @@ public class DriverAgent : Agent
         rearPassengerW = wheelColliders.First(q => q.name == "RearPassenger");
     }
 
-	private void FixedUpdate()
+	private void Update()
 	{
         Accelerate();
 		Steer();
         UpdateWheelPoses();
+        UpdateCamera();
+    }
+
+    private void UpdateCamera()
+    {
+        Vector3 dir = car.transform.forward;
+        _camera.transform.rotation = Quaternion.Euler(90, car.rotation.eulerAngles.y + 90, 90);
+        _camera.transform.position = new Vector3(car.position.x, cameraHeight, car.position.z);
+        _camera.transform.position += dir * distance;
     }
 
 	private float m_steeringAngle;
-
+    public float cameraHeight = 10;
+    public float distance = 3;
 	public float maxSteerAngle = 30;
 	public float MotorForce = 100;
     public PathCreator pathCreator;
