@@ -36,13 +36,7 @@ public class DriverAgent : Agent
         frontPassengerW = wheelColliders.First(q => q.name == "FrontPassenger");
         rearDriverW = wheelColliders.First(q => q.name == "RearDriver");
         rearPassengerW = wheelColliders.First(q => q.name == "RearPassenger");
-    }
 
-	private void Update()
-	{
-        Accelerate();
-		Steer();
-        UpdateWheelPoses();
         UpdateCamera();
     }
 
@@ -63,6 +57,10 @@ public class DriverAgent : Agent
 
     public override void AgentAction(float[] vectorAction, string textAction)
     {
+        Accelerate();
+		Steer();
+        UpdateWheelPoses();
+
         var carPosition = new Vector2(car.position.x, car.position.z);
 
         var distance = lineSegments.Min(q => DistancePointLine(carPosition, q.Item1, q.Item2));
@@ -79,6 +77,7 @@ public class DriverAgent : Agent
         {
             var reward = velocity / (1 + distance);
             AddReward(reward);
+            UpdateCamera();
         }
     }
 
@@ -95,6 +94,8 @@ public class DriverAgent : Agent
         frontPassengerW.brakeTorque = 0;
         rearDriverW.brakeTorque = 0;
         rearPassengerW.brakeTorque = 0;
+
+        UpdateCamera();
     }
 
     private bool IsOnGrass()
