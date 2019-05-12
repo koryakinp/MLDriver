@@ -63,6 +63,12 @@ public class DriverAgent : Agent
 
         var carPosition = new Vector2(car.position.x, car.position.z);
 
+        var curLineSegment = lineSegments.Single(q => 
+            q.Item1.x <= carPosition.x && 
+            q.Item1.y <= carPosition.y &&
+            q.Item2.x >= carPosition.x &&
+            q.Item2.y >= carPosition.y);
+
         var distance = lineSegments.Min(q => DistancePointLine(carPosition, q.Item1, q.Item2));
         var velocity = Vector3.Dot(car.velocity, gameObject.transform.forward);
 
