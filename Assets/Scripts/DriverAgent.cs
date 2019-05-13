@@ -3,23 +3,22 @@ using UnityEngine;
 using MLAgents;
 using PathCreation;
 using System.Collections.Generic;
+using System;
 
 public class DriverAgent : Agent
 {
     private WheelCollider frontDriverW, frontPassengerW, rearDriverW, rearPassengerW;
     private Transform frontDriverT, frontPassengerT, rearDriverT, rearPassengerT;
     private Rigidbody car;
-    private List<(Vector2, Vector2)> lineSegments;
+    private List<(Vector3, Vector3)> lineSegments;
     private Camera _camera;
     private int layer_mask;
+    private Vector3 _prevIntersect = Vector3.zero;
 
     private float _turn;
 
     void Start()
     {
-        QualitySettings.vSyncCount = 0;
-        Application.targetFrameRate = 30;
-
         _camera = Camera.main;
         layer_mask = LayerMask.GetMask("Surface");
         lineSegments = GetLineSegments();
@@ -38,6 +37,11 @@ public class DriverAgent : Agent
         rearPassengerW = wheelColliders.First(q => q.name == "RearPassenger");
 
         UpdateCamera();
+
+        for (int i = 0; i < lineSegments.Count; i++)
+        {
+            Debug.DrawLine(lineSegments[i].Item1, lineSegments[i].Item2, Color.red, 100);
+        }
     }
 
     private void UpdateCamera()
@@ -53,35 +57,28 @@ public class DriverAgent : Agent
     public float distance = 3;
 	public float maxSteerAngle = 30;
 	public float MotorForce = 100;
+    public float DistanceRewardFactor = 10;
+    public float RewardPenalty = -10;
     public PathCreator pathCreator;
 
     public override void AgentAction(float[] vectorAction, string textAction)
     {
+        var rm = ComputeRewardMetric(car.position);
+
         Accelerate();
 		Steer();
         UpdateWheelPoses();
-
-        var carPosition = new Vector2(car.position.x, car.position.z);
-
-        var curLineSegment = lineSegments.Single(q => 
-            q.Item1.x <= carPosition.x && 
-            q.Item1.y <= carPosition.y &&
-            q.Item2.x >= carPosition.x &&
-            q.Item2.y >= carPosition.y);
-
-        var distance = lineSegments.Min(q => DistancePointLine(carPosition, q.Item1, q.Item2));
-        var velocity = Vector3.Dot(car.velocity, gameObject.transform.forward);
 
         _turn = vectorAction[0];
 
         if (IsOnGrass())
         {
             Done();
-            AddReward(-10);
+            AddReward(RewardPenalty);
         }
         else
         {
-            var reward = velocity / (1 + distance);
+            var reward = rm.DistanceFromPrevPosition * DistanceRewardFactor;
             AddReward(reward);
             UpdateCamera();
         }
@@ -89,8 +86,9 @@ public class DriverAgent : Agent
 
     public override void AgentReset()
     {
+        _prevIntersect = Vector3.zero;
         car.velocity = Vector3.zero;
-        var idx = Random.Range(0, pathCreator.EditorData.bezierPath.NumAnchorPoints - 1);
+        var idx = UnityEngine.Random.Range(0, pathCreator.EditorData.bezierPath.NumAnchorPoints - 1);
         var pointsInSegment = pathCreator.EditorData.bezierPath.GetPointsInSegment(idx);
 
         transform.position = new Vector3(pointsInSegment[0].x, 0.01f, pointsInSegment[0].z);
@@ -100,7 +98,6 @@ public class DriverAgent : Agent
         frontPassengerW.brakeTorque = 0;
         rearDriverW.brakeTorque = 0;
         rearPassengerW.brakeTorque = 0;
-
         UpdateCamera();
     }
 
@@ -189,6 +186,29 @@ public class DriverAgent : Agent
         _transform.rotation = _quat;
     }
 
+    private Vector3 GetIntersect(Vector3 carPosition)
+    {
+        carPosition = Vector3.ProjectOnPlane(carPosition, Vector3.down);
+
+        var tempDistance = float.MaxValue;
+        var tempIntersect = Vector3.zero;
+
+        foreach (var lineSegment in lineSegments)
+        {
+            Vector3 curIntersect = ProjectPointLine(carPosition, lineSegment.Item1, lineSegment.Item2);
+            var distance = Vector3.Magnitude(curIntersect - carPosition);
+
+            if(distance < tempDistance)
+            {
+                tempDistance = distance;
+                tempIntersect = curIntersect;
+            }
+        }
+
+        return tempIntersect;
+    }
+
+
     private static Vector3 ProjectPointLine(Vector3 point, Vector3 lineStart, Vector3 lineEnd)
     {
         Vector3 relativePoint = point - lineStart;
@@ -204,19 +224,58 @@ public class DriverAgent : Agent
         return lineStart + normalizedLineDirection * dot;
     }
 
-    private List<(Vector2, Vector2)> GetLineSegments()
+    private RewardMetric ComputeRewardMetric(Vector3 carPosition)
     {
-        var lines = new List<(Vector2, Vector2)>();
+        var curIntersect = GetIntersect(car.position);
+
+        var distanceTraveled = _prevIntersect != Vector3.zero
+            ? Vector3.Magnitude(_prevIntersect - curIntersect)
+            : 0;
+
+        var distanceFromCenterline = Vector3.Magnitude(curIntersect - car.position);
+
+        _prevIntersect = new Vector3(curIntersect.x, curIntersect.y, curIntersect.z);
+        var velocity = Vector3.Dot(car.velocity, gameObject.transform.forward);
+
+        return new RewardMetric(distanceFromCenterline, distanceTraveled, velocity);
+    }
+
+    private List<(Vector3, Vector3)> GetLineSegments()
+    {
+        var lines = new List<(Vector3, Vector3)>();
 
         for (int i = 0; i < pathCreator.path.NumVertices; i++)
         {
             var start = pathCreator.path.vertices[i];
+            
             var end = i == pathCreator.path.NumVertices - 1 
                 ? pathCreator.path.vertices[0] 
                 : pathCreator.path.vertices[i + 1];
-            lines.Add((new Vector2(start.x, start.z), new Vector2(end.x, end.z)));
+
+            start = Vector3.ProjectOnPlane(start, Vector3.down);
+            end = Vector3.ProjectOnPlane(end, Vector3.down);
+
+            lines.Add((start, end));
         }
 
         return lines;
     }
+
+    private class RewardMetric
+    {
+        public readonly float DistanceFromCenterline;
+        public readonly float DistanceFromPrevPosition;
+        public readonly float Speed;
+
+        public RewardMetric(
+            float distanceFromCenterline,
+            float distanceFromPrevPosition,
+            float speed)
+        {
+            DistanceFromCenterline = distanceFromCenterline;
+            DistanceFromPrevPosition = distanceFromPrevPosition;
+            Speed = speed;
+        }
+    }
+
 }

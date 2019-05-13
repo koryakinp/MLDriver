@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 1526980366}
-  m_IndirectSpecularColor: {r: 0.285027, g: 0.3713936, b: 0.49601296, a: 1}
+  m_IndirectSpecularColor: {r: 0.28502697, g: 0.37139347, b: 0.49601266, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -2202,7 +2202,7 @@ WheelCollider:
     spring: 90000
     damper: 9000
     targetPosition: 1
-  m_SuspensionDistance: 0.08
+  m_SuspensionDistance: 0.1
   m_ForceAppPointDistance: 0
   m_Mass: 100
   m_WheelDampingRate: 1
@@ -2485,7 +2485,7 @@ WheelCollider:
     spring: 90000
     damper: 9000
     targetPosition: 1
-  m_SuspensionDistance: 0.08
+  m_SuspensionDistance: 0.1
   m_ForceAppPointDistance: 0
   m_Mass: 100
   m_WheelDampingRate: 1
@@ -2822,7 +2822,7 @@ WheelCollider:
     spring: 90000
     damper: 9000
     targetPosition: 1
-  m_SuspensionDistance: 0.08
+  m_SuspensionDistance: 0.1
   m_ForceAppPointDistance: 0
   m_Mass: 100
   m_WheelDampingRate: 1
@@ -3028,7 +3028,7 @@ Light:
   m_BounceIntensity: 1
   m_ColorTemperature: 6570
   m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_BoundingSphereOverride: {x: 1e-45, y: 0, z: 1.63e-43, w: 0}
   m_UseBoundingSphereOverride: 0
   m_ShadowRadius: 0
   m_ShadowAngle: 0
@@ -3235,7 +3235,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1703296075}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.9, y: 0.01, z: 10.05}
+  m_LocalPosition: {x: 1.9, y: 0, z: 10.05}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 639136794}
@@ -3301,7 +3301,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 34acf5b007e254dcf82908cba1a26f5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  brain: {fileID: 11400000, guid: da7e8efdfefc89043b28e88f1bad5205, type: 2}
+  brain: {fileID: 11400000, guid: b5a504156b36945658c21d1377ceccd8, type: 2}
   agentParameters:
     agentCameras:
     - {fileID: 282840813}
@@ -3496,7 +3496,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   broadcastHub:
     broadcastingBrains:
-    - {fileID: 11400000, guid: da7e8efdfefc89043b28e88f1bad5205, type: 2}
+    - {fileID: 11400000, guid: b5a504156b36945658c21d1377ceccd8, type: 2}
     _brainsToControl:
     - {fileID: 11400000, guid: da7e8efdfefc89043b28e88f1bad5205, type: 2}
   maxSteps: 0
@@ -3574,7 +3574,7 @@ WheelCollider:
     spring: 90000
     damper: 9000
     targetPosition: 1
-  m_SuspensionDistance: 0.08
+  m_SuspensionDistance: 0.1
   m_ForceAppPointDistance: 0
   m_Mass: 100
   m_WheelDampingRate: 1
