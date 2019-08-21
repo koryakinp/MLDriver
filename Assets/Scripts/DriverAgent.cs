@@ -3,7 +3,6 @@ using UnityEngine;
 using MLAgents;
 using PathCreation;
 using System.Collections.Generic;
-using System;
 
 public class DriverAgent : Agent
 {
@@ -19,9 +18,9 @@ public class DriverAgent : Agent
 
     void Start()
     {
+        
         _camera = Camera.main;
         layer_mask = LayerMask.GetMask("Surface");
-        lineSegments = GetLineSegments();
         car = gameObject.GetComponent<Rigidbody>();
         var wheelColliders = gameObject.GetComponentsInChildren<WheelCollider>();
         var wheels = gameObject.transform.Find("Wheels");
@@ -38,10 +37,6 @@ public class DriverAgent : Agent
 
         UpdateCamera();
 
-        for (int i = 0; i < lineSegments.Count; i++)
-        {
-            Debug.DrawLine(lineSegments[i].Item1, lineSegments[i].Item2, Color.red, 100);
-        }
     }
 
     private void UpdateCamera()
@@ -57,14 +52,12 @@ public class DriverAgent : Agent
     public float distance = 3;
 	public float maxSteerAngle = 30;
 	public float MotorForce = 100;
-    public float DistanceRewardFactor = 10;
-    public float RewardPenalty = -10;
+    public float Reward = 1;
+    public float Penalty = -10;
     public PathCreator pathCreator;
 
     public override void AgentAction(float[] vectorAction, string textAction)
     {
-        var rm = ComputeRewardMetric(car.position);
-
         Accelerate();
 		Steer();
         UpdateWheelPoses();
@@ -74,12 +67,11 @@ public class DriverAgent : Agent
         if (IsOnGrass())
         {
             Done();
-            AddReward(RewardPenalty);
+            AddReward(Penalty);
         }
         else
         {
-            var reward = rm.DistanceFromPrevPosition * DistanceRewardFactor;
-            AddReward(reward);
+            AddReward(Reward);
             UpdateCamera();
         }
     }
@@ -117,11 +109,6 @@ public class DriverAgent : Agent
         }
 
         return false;
-    }
-
-    private static float DistancePointLine(Vector3 point, Vector3 lineStart, Vector3 lineEnd)
-    {
-        return Vector3.Magnitude(ProjectPointLine(point, lineStart, lineEnd) - point);
     }
 
     private void Steer()
@@ -185,97 +172,4 @@ public class DriverAgent : Agent
         _transform.position = _pos;
         _transform.rotation = _quat;
     }
-
-    private Vector3 GetIntersect(Vector3 carPosition)
-    {
-        carPosition = Vector3.ProjectOnPlane(carPosition, Vector3.down);
-
-        var tempDistance = float.MaxValue;
-        var tempIntersect = Vector3.zero;
-
-        foreach (var lineSegment in lineSegments)
-        {
-            Vector3 curIntersect = ProjectPointLine(carPosition, lineSegment.Item1, lineSegment.Item2);
-            var distance = Vector3.Magnitude(curIntersect - carPosition);
-
-            if(distance < tempDistance)
-            {
-                tempDistance = distance;
-                tempIntersect = curIntersect;
-            }
-        }
-
-        return tempIntersect;
-    }
-
-
-    private static Vector3 ProjectPointLine(Vector3 point, Vector3 lineStart, Vector3 lineEnd)
-    {
-        Vector3 relativePoint = point - lineStart;
-        Vector3 lineDirection = lineEnd - lineStart;
-        float length = lineDirection.magnitude;
-        Vector3 normalizedLineDirection = lineDirection;
-        if (length > .000001f)
-            normalizedLineDirection /= length;
-
-        float dot = Vector3.Dot(normalizedLineDirection, relativePoint);
-        dot = Mathf.Clamp(dot, 0.0F, length);
-
-        return lineStart + normalizedLineDirection * dot;
-    }
-
-    private RewardMetric ComputeRewardMetric(Vector3 carPosition)
-    {
-        var curIntersect = GetIntersect(car.position);
-
-        var distanceTraveled = _prevIntersect != Vector3.zero
-            ? Vector3.Magnitude(_prevIntersect - curIntersect)
-            : 0;
-
-        var distanceFromCenterline = Vector3.Magnitude(curIntersect - car.position);
-
-        _prevIntersect = new Vector3(curIntersect.x, curIntersect.y, curIntersect.z);
-        var velocity = Vector3.Dot(car.velocity, gameObject.transform.forward);
-
-        return new RewardMetric(distanceFromCenterline, distanceTraveled, velocity);
-    }
-
-    private List<(Vector3, Vector3)> GetLineSegments()
-    {
-        var lines = new List<(Vector3, Vector3)>();
-
-        for (int i = 0; i < pathCreator.path.NumVertices; i++)
-        {
-            var start = pathCreator.path.vertices[i];
-            
-            var end = i == pathCreator.path.NumVertices - 1 
-                ? pathCreator.path.vertices[0] 
-                : pathCreator.path.vertices[i + 1];
-
-            start = Vector3.ProjectOnPlane(start, Vector3.down);
-            end = Vector3.ProjectOnPlane(end, Vector3.down);
-
-            lines.Add((start, end));
-        }
-
-        return lines;
-    }
-
-    private class RewardMetric
-    {
-        public readonly float DistanceFromCenterline;
-        public readonly float DistanceFromPrevPosition;
-        public readonly float Speed;
-
-        public RewardMetric(
-            float distanceFromCenterline,
-            float distanceFromPrevPosition,
-            float speed)
-        {
-            DistanceFromCenterline = distanceFromCenterline;
-            DistanceFromPrevPosition = distanceFromPrevPosition;
-            Speed = speed;
-        }
-    }
-
 }
