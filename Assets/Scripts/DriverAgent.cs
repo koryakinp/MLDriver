@@ -13,13 +13,18 @@ public class DriverAgent : Agent
     private Camera _camera;
     private int layer_mask;
     private Vector3 _prevIntersect = Vector3.zero;
-
+    private DriverAcademy _academy;
+    private float _reward;
+    private float _penalty;
     private float _turn;
 
     void Start()
     {
-        
+        _academy = GameObject.FindObjectOfType<DriverAcademy>();
+        _reward = _academy.resetParameters["reward"];
+        _penalty = _academy.resetParameters["penalty"];
         _camera = Camera.main;
+
         layer_mask = LayerMask.GetMask("Surface");
         car = gameObject.GetComponent<Rigidbody>();
         var wheelColliders = gameObject.GetComponentsInChildren<WheelCollider>();
@@ -52,8 +57,6 @@ public class DriverAgent : Agent
     public float distance = 3;
 	public float maxSteerAngle = 30;
 	public float MotorForce = 100;
-    public float Reward = 1;
-    public float Penalty = -10;
     public PathCreator pathCreator;
 
     public override void AgentAction(float[] vectorAction, string textAction)
@@ -67,11 +70,11 @@ public class DriverAgent : Agent
         if (IsOnGrass())
         {
             Done();
-            AddReward(Penalty);
+            AddReward(_penalty);
         }
         else
         {
-            AddReward(Reward);
+            AddReward(_reward);
             UpdateCamera();
         }
     }

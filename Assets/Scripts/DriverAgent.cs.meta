@@ -3,7 +3,9 @@ guid: 34acf5b007e254dcf82908cba1a26f5c
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - brain: {fileID: 11400000, guid: da7e8efdfefc89043b28e88f1bad5205, type: 2}
+  - pathCreator: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 
