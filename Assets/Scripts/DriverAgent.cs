@@ -82,12 +82,12 @@ public class DriverAgent : Agent
     public override void AgentReset()
     {
         _prevIntersect = Vector3.zero;
-        car.velocity = Vector3.zero;
         var idx = UnityEngine.Random.Range(0, pathCreator.EditorData.bezierPath.NumAnchorPoints - 1);
         var pointsInSegment = pathCreator.EditorData.bezierPath.GetPointsInSegment(idx);
 
         transform.position = new Vector3(pointsInSegment[0].x, 0.01f, pointsInSegment[0].z);
         transform.LookAt(pointsInSegment[1]);
+        car.velocity = car.transform.forward;
 
         frontDriverW.brakeTorque = 0;
         frontPassengerW.brakeTorque = 0;
