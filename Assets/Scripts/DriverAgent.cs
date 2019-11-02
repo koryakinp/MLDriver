@@ -21,8 +21,6 @@ public class DriverAgent : Agent
     void Start()
     {
         _academy = GameObject.FindObjectOfType<DriverAcademy>();
-        _reward = _academy.resetParameters["reward"];
-        _penalty = _academy.resetParameters["penalty"];
         _camera = Camera.main;
 
         layer_mask = LayerMask.GetMask("Surface");
@@ -81,6 +79,8 @@ public class DriverAgent : Agent
 
     public override void AgentReset()
     {
+        _reward = _academy.resetParameters["reward"];
+        _penalty = _academy.resetParameters["penalty"];
         _prevIntersect = Vector3.zero;
         var idx = UnityEngine.Random.Range(0, pathCreator.EditorData.bezierPath.NumAnchorPoints - 1);
         var pointsInSegment = pathCreator.EditorData.bezierPath.GetPointsInSegment(idx);
