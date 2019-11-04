@@ -6,3 +6,6 @@
  - [MAC OS build](https://github.com/koryakinp/MLDriver/releases/download/5.1/MLDriver_MAC_OS_X.zip)
  - [Windows Build](https://github.com/koryakinp/MLDriver/releases/download/5.1/MLDriver_Windows_x86_64.zip)
  - [Web Build](https://koryakinp.github.io/MLDriver)
+ 
+ ## Demo
+![Demo](docs/demo.gif "Demo")
