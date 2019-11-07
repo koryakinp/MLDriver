@@ -3501,8 +3501,8 @@ MonoBehaviour:
     - {fileID: 11400000, guid: da7e8efdfefc89043b28e88f1bad5205, type: 2}
   maxSteps: 0
   trainingConfiguration:
-    width: 128
-    height: 128
+    width: 64
+    height: 64
     qualityLevel: 1
     timeScale: 100
     targetFrameRate: 30
